@@ -84,12 +84,19 @@ public class ElixirModToxicityController extends TimerTask {
 		if(entryExists)
 		{
 			//Party hard!
-			player.damage(CactusRum_baseDamage+(thisGuyIsSmashed.toxicity/CactusRum_toxicityPerDamage));
-			thisGuyIsSmashed.CactusRumEnabled = true;
+			if(thisGuyIsSmashed.toxicity > 0)
+			{
+				player.damage(CactusRum_baseDamage+(thisGuyIsSmashed.toxicity/CactusRum_toxicityPerDamage));
+			}
+			else
+			{
+				player.damage(CactusRum_baseDamage);
+			}
 			
 			//Update entry
 			thisGuyIsSmashed.modToxicity(CactusRum_toxicityPerDrink);
 			thisGuyIsSmashed.CactusRumTicks = CactusRum_ticksPerDrink;
+			thisGuyIsSmashed.CactusRumEnabled = true;
 		}
 		//If not, add the new entry to the list
 		else
@@ -232,6 +239,12 @@ public class ElixirModToxicityController extends TimerTask {
 			name = newName;
 			player = newPlayer;
 			toxicity = setToxicity;
+			
+			//Potions
+			CactusRumEnabled = false;
+			CactusRumTicks = 0;
+			HasteEnabled = false;
+			HasteTicks = 0;
 		}
 		
 		//Get Toxicity

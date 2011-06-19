@@ -68,12 +68,12 @@ public class ElixirMod extends JavaPlugin {
 		pm.registerEvent(Event.Type.PLAYER_JOIN, playerListener, Event.Priority.Normal, this);
 		
 		//Startup was good!
-		log.info("[ElixirMod] - Version 0.3 Started.");
+		log.info("[ElixirMod] - Version 0.31 Started.");
 	} 
 	
 	public void onDisable()
 	{ 
-		log.info("[ElixirMod] - Version 0.3 Stopped.");
+		log.info("[ElixirMod] - Version 0.31 Stopped.");
 	} 
 	
 }
