@@ -1,250 +1,206 @@
 package me.steeveeo.ElixirMod;
 
-import java.util.TimerTask;
+import java.util.HashMap;
+import java.util.Map;
+
+import me.steeveeo.ElixirMod.Potions.CactusRum;
+import me.steeveeo.ElixirMod.Potions.DiversAle;
+import me.steeveeo.ElixirMod.Potions.DragonsDraught;
+import me.steeveeo.ElixirMod.Potions.ElixirModPotion;
+import me.steeveeo.ElixirMod.Potions.Featherfall;
+import me.steeveeo.ElixirMod.Potions.Firetouch;
+import me.steeveeo.ElixirMod.Potions.Frosttouch;
+import me.steeveeo.ElixirMod.Potions.Haste;
+import me.steeveeo.ElixirMod.Potions.HealthPotion;
+import me.steeveeo.ElixirMod.Potions.ObbySkin;
+import me.steeveeo.ElixirMod.Potions.WheatseedTea;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
-public class ElixirModToxicityController extends TimerTask {
-
-	//Start Logger
-	//Logger log = Logger.getLogger("Minecraft");
+public class ElixirModToxicityController implements Runnable {
 	
-	//Plugin Constructor
-	public ElixirMod plugin; public ElixirModToxicityController(ElixirMod instance)
+	//Constructor
+	public static ElixirMod plugin;
+	public ElixirModToxicityController(ElixirMod instance)
 	{ 
 		plugin = instance;
 	}
 	
 	//Control Variables
-	int maxPlayers = 20; //plugin.getServer().getMaxPlayers();
-	PotionEntry[] potionUsers = new PotionEntry[maxPlayers];
-	int thisTick = 0;
-	
-	//------------------
-	// CACTUS RUM SETUP
-	//------------------
-	
-	//Modifiers
-	int CactusRum_baseDamage = 6;
-	int CactusRum_toxicityPerDamage = 5;
-	int CactusRum_toxicityPerDrink = 60;
-	int CactusRum_ticksPerDrink = 60;
-	int CactusRum_tickLength = 3;
-	
-	//Party Messages
-	static String[] CactusRum_swigMessages = new String[]{
-		"You feel woozy.",
-		"You take a drink.",
-		"You take a swig.",
-		"The Cactus Rum burns on the way down.",
-		"The drink scorches your throat.",
-		"Senses of both bravery and nausea wash over you.",
-		"Fitting for a drink made of cactus, that stung.",
-		"You feel like you just tried to eat a sword.",
-		"Your tongue goes numb, your vision blurs slightly.",
-		"Your pain fades, as does your reason."
-	};
-	
-	//End of Party Messages
-	static String[] CactusRum_soberMessages = new String[]{
-		"You sober up.",
-		"You are now thinking clearly.",
-		"The alcoholic fog clears, you have a headache.",
-		"Your head hurts like the Nether, but you are sober.",
-		"The liquor wears off.",
-		"Your vision clears, but your stomachache does not.",
-		"Your pain and reasoning come crashing back to you.",
-		"Everything returns to its normal, cuboid shape.",
-		"Suddenly the blur goes away, everything is clear.",
-		"You regain your balance, only to buckle in pain."
-	};
-	
-	//Player took a swig
-	public void CactusRum_playerDrink(Player player)
-	{
-		//Check if this player already exists in the table
-		boolean entryExists = false;
-		PotionEntry thisGuyIsSmashed = new PotionEntry(player.getName(),player,CactusRum_toxicityPerDrink);
-		for(PotionEntry user : potionUsers)
-		{
-			if(user != null)
-			{
-				if(user.getPlayer() == player)
-				{
-					entryExists = true;
-					thisGuyIsSmashed = user;
-					break;
-				}
-			}
-		}
-		player.sendMessage(ChatColor.DARK_GRAY + "**" + util.randomStringFromList(CactusRum_swigMessages) + "**");
-		
-		//Check if we found the entry
-		if(entryExists)
-		{
-			//Party hard!
-			if(thisGuyIsSmashed.toxicity > 0)
-			{
-				player.damage(CactusRum_baseDamage+(thisGuyIsSmashed.toxicity/CactusRum_toxicityPerDamage));
-			}
-			else
-			{
-				player.damage(CactusRum_baseDamage);
-			}
-			
-			//Update entry
-			thisGuyIsSmashed.modToxicity(CactusRum_toxicityPerDrink);
-			thisGuyIsSmashed.CactusRumTicks = CactusRum_ticksPerDrink;
-			thisGuyIsSmashed.CactusRumEnabled = true;
-		}
-		//If not, add the new entry to the list
-		else
-		{
-			//Party hard!
-			player.damage(CactusRum_baseDamage);
-			
-			//Add
-			int index = 0;
-			for(PotionEntry user : potionUsers)
-			{
-				if(user == null)
-				{
-					potionUsers[index] = thisGuyIsSmashed;
-					thisGuyIsSmashed.CactusRumEnabled = true;
-					thisGuyIsSmashed.CactusRumTicks = CactusRum_ticksPerDrink;
-					return;
-				}
-				else
-				{
-					index++;
-				}
-			}
-			
-			//Didn't get added to the list, fffff
-			plugin.log.info("[ElixirMod] - ERROR: PLAYER COULD NOT BE ADDED TO LIST!");
-		}
-	}
-	
-	//--End Cactus Rum Setup--
-	
-	//-----------------------
-	// ELIXIR OF HASTE SETUP
-	//-----------------------
-	
-	//Modifiers
-	int Haste_baseDamage = 0;
-	int Haste_toxicityMinForDamage = 50;
-	int Haste_toxicityPerDamage = 15;
-	int Haste_toxicityPerDrink = 20;
-	int Haste_ticksPerDrink = 10;
-	int Haste_tickLength = 6;
-	
-	//Take a Drink messages
-	static String[] Haste_swigMessages = new String[]{
-		"You feel light on your feet."
-	};
-	
-	//It Wore Off messages
-	static String[] Haste_soberMessages = new String[]{
-		"Your legs begin to feel sluggish."
-	};
-	
-	//Player took a swig
-	public void Haste_playerDrink(Player player)
-	{
-		//Check if this player already exists in the table
-		boolean entryExists = false;
-		PotionEntry drinker = new PotionEntry(player.getName(),player,Haste_toxicityPerDrink);
-		for(PotionEntry user : potionUsers)
-		{
-			if(user != null)
-			{
-				if(user.getPlayer() == player)
-				{
-					entryExists = true;
-					drinker = user;
-					break;
-				}
-			}
-		}
-		player.sendMessage(ChatColor.DARK_GRAY + "**" + util.randomStringFromList(Haste_swigMessages) + "**");
-		
-		//Check if we found the entry
-		if(entryExists)
-		{
-			//Toxic Damage
-			if(drinker.toxicity > Haste_toxicityMinForDamage)
-			{
-				player.damage(Haste_baseDamage+(drinker.toxicity/Haste_toxicityPerDamage));
-			}
-			
-			//Update entry
-			drinker.modToxicity(Haste_toxicityPerDrink);
-			
-			//Enable speed
-			plugin.hasteEnabled.put(player,true);
-			drinker.HasteEnabled = true;
-			drinker.HasteTicks = Haste_ticksPerDrink;
-		}
-		//If not, add the new entry to the list
-		else
-		{
-			//Add
-			int index = 0;
-			for(PotionEntry user : potionUsers)
-			{
-				if(user == null)
-				{
-					//Enable speed
-					plugin.hasteEnabled.put(player,true);
-					drinker.HasteEnabled = true;
-					drinker.HasteTicks = Haste_ticksPerDrink;
-					
-					potionUsers[index] = drinker;
-					return;
-				}
-				else
-				{
-					index++;
-				}
-			}
-			
-			//Didn't get added to the list, fffff
-			plugin.log.info("[ElixirMod] - ERROR: PLAYER COULD NOT BE ADDED TO LIST!");
-		}
-	}
-	
-	//--End Elixir of Haste Setup--
+	public static PotionEntry[] potionUsers = null;
+	public int thisTick = 0;
 
-	//Struct for dealing with players
-	public class PotionEntry
+	//----------------
+	// POTION MODULES
+	//----------------
+	//Include all Potion objects in this!
+	public ElixirModPotion[] PotionList;
+	public void recompilePotionList()
+	{
+		PotionList = new ElixirModPotion[]{
+				new CactusRum(),
+				new Firetouch(),
+				new Haste(),
+				new ObbySkin(),
+				new WheatseedTea(),
+				new Featherfall(),
+				new DiversAle(),
+				new Frosttouch(),
+				new HealthPotion(),
+				new DragonsDraught()
+		};
+	};
+	//Find a potion by its name
+	public ElixirModPotion getPotionByName(String name)
+	{
+		name = name.toLowerCase();
+		for(ElixirModPotion potion : PotionList)
+		{
+			String potionName = potion.getName().toLowerCase();
+			if(potionName.indexOf(name) >= 0)
+			{
+				return potion;
+			}
+		}
+		
+		return null;
+	}
+	
+	//Parse Recipe lists
+	public void parseRecipes()
+	{
+		for(int index = 0; index < PotionList.length; index++)
+		{
+			ElixirModPotion thisPotion = PotionList[index];
+			if(thisPotion != null)
+			{
+				thisPotion.setRecipe(parseRecipeArray(thisPotion.getRecipeString()));
+			}
+		}
+	}
+	private static int[][] parseRecipeArray(String In)
+	{
+		//Parse into recipe requirements by these syntax:
+		// ##Type[:##Data],(...)
+		//With that, a recipe for Obsidian Skin would look like:
+		//"49*1,334*8" for 1 obsidian and 8 leather. Datavalues are optional.
+		
+		String[] ingredients = util.explode(In, ',');
+		int[][] output = new int[ingredients.length][];
+		
+		for(int index = 0; index < ingredients.length; index++)
+		{
+			int[] typeAndAmount = new int[3];
+			
+			String[] preDataValue = util.explode(ingredients[index], '*');
+			String[] ingredient = util.explode(preDataValue[0], ':');
+			
+			//Interpret Data
+			int typeID = Integer.parseInt(ingredient[0]);
+			int dataValue = 0;
+			if(ingredient.length >= 2)
+			{
+				dataValue = Integer.parseInt(ingredient[1]);
+			}
+			int amount = Integer.parseInt(preDataValue[1]);
+			
+			//Set to array
+			typeAndAmount[0] = typeID;
+			typeAndAmount[1] = dataValue;
+			typeAndAmount[2] = amount;
+			
+			output[index] = typeAndAmount;
+		}
+		
+		return output;
+	}
+	
+	//-----------------
+	// TOXICITY DAMAGE
+	//-----------------
+	
+	//Modifiers
+	int Toxicity_minToxicityForDamage = 50;
+	int Toxicity_toxicityPerDamage = 20;
+	int Toxicity_tickLength = 3;
+	
+	//Overtoxic Messages
+	static String[] Toxicity_sickMessages = new String[]{
+		"You feel sick to your stomach.",
+		"Something feels off.",
+		"Nausea washes over you.",
+		"A sense of dread fills your gut."
+	};
+	
+	//--End Toxicity Damage--
+
+	//----------------------
+	// PLAYER TRACKER ENTRY
+	//----------------------
+	public static class PotionEntry
 	{
 		//Vars
 		private
-			String name;
 			Player player;
 			int toxicity;
+		public
+			boolean overToxic;
 			
 		//Potion Buffs
-		public 
-			boolean CactusRumEnabled;
-			int CactusRumTicks;
-			boolean HasteEnabled;
-			int HasteTicks;
+		public Map<String, Boolean> HasBuff = new HashMap<String, Boolean>();
+		public Map<String, Integer> BuffTicks = new HashMap<String, Integer>();
 		
 		//Constructor
-		public PotionEntry(String newName, Player newPlayer, int setToxicity)
+		public PotionEntry(Player newPlayer)
 		{
-			name = newName;
 			player = newPlayer;
-			toxicity = setToxicity;
+			toxicity = 0;
+			overToxic = false;
 			
-			//Potions
-			CactusRumEnabled = false;
-			CactusRumTicks = 0;
-			HasteEnabled = false;
-			HasteTicks = 0;
+		}
+		
+		//Hook to player for ease of access
+		public void commit()
+		{
+			//Add
+			int index = 0;
+			for(PotionEntry user : potionUsers)
+			{
+				if(user == null)
+				{
+					potionUsers[index] = this;
+					break;
+				}
+				else
+				{
+					index++;
+				}
+			}
+			
+			plugin.BuffList.put(player,this);
+		}
+		
+		//Clear up all buffs, links, and such
+		public void reset()
+		{
+			//Find self in reference list and nullify
+			int index = 0;
+			for(PotionEntry user : potionUsers)
+			{
+				if(user == this)
+				{
+					potionUsers[index] = null;
+					break;
+				}
+				else
+				{
+					index++;
+				}
+			}
+			
+			//Unhook
+			plugin.BuffList.put(player, null);
 		}
 		
 		//Get Toxicity
@@ -257,12 +213,19 @@ public class ElixirModToxicityController extends TimerTask {
 		public void modToxicity(int amount)
 		{
 			toxicity += amount;
+			
+			//Toxicity cannot go below 0
+			if(toxicity < 0)
+			{
+				toxicity = 0;
+			}
 		}
-		
-		//Get Name
-		public String getName()
+		public void setToxicity(int amount)
 		{
-			return name;
+			if(amount >= 0)
+			{
+				toxicity = amount;
+			}
 		}
 		
 		//Get Player
@@ -272,77 +235,112 @@ public class ElixirModToxicityController extends TimerTask {
 		}
 	}
 	
-	//Return index of PotionEntry
-	public int getPotionEntryByPlayer(Player player)
-	{
-		
-		return -1;
-	}
+	//--End Player Tracker--
 	
 	//---------------------
 	// ELIXIR CONTROL LOOP
 	//---------------------
 	public void run()
 	{
+		//Init potionUsers array
+		//   Note: Doing this here instead of startup because
+		//   the server needs to be fully loaded before
+		//   server.getMaxPlayers() will return anything but 0. ¬_¬
+		if(potionUsers == null)
+		{
+			int maxPlayers = plugin.getServer().getMaxPlayers();
+			potionUsers = new PotionEntry[maxPlayers];
+		}
+		
+		
 		thisTick++;
 		
 		int index = 0;
 		for(PotionEntry user : potionUsers)
 		{
 			//Validity Check
-			if(user == null || user.getPlayer() == null)
+			if(user == null)
 			{
 				index++;
 				continue;
 			}
 			
-			Player thisPlayer = user.getPlayer();
+			//Disconnected, Missing, or Dead Player
+			if(user.getPlayer() == null || user.getPlayer().getHealth() <= 0)
+			{
+				potionUsers[index] = null;
+				
+				//If player just died instead of disconnecting, remove their buff
+				if(user.getPlayer() != null)
+				{
+					plugin.BuffList.put(user.getPlayer(), null);
+				}
+				
+				index++;
+				continue;
+			}
+			
+			Player player = user.getPlayer();
+			
+			//Check for damage
+			if(thisTick % Toxicity_tickLength == 0)
+			{
+				if(user.toxicity >= Toxicity_minToxicityForDamage)
+				{
+					//Warn if over-toxic
+					if(!user.overToxic)
+					{
+						player.sendMessage(ChatColor.DARK_GRAY + "**" + util.randomStringFromList(Toxicity_sickMessages) + "**");
+						user.overToxic = true;
+					}
+					
+					//Damage
+					int toxicDamage = Math.max(((user.toxicity - Toxicity_minToxicityForDamage) / Toxicity_toxicityPerDamage),1);
+					int targetHealth = player.getHealth() - toxicDamage;
+					targetHealth = Math.max(targetHealth, 0);
+					player.setHealth(targetHealth);
+				}
+				else if(user.toxicity < Toxicity_minToxicityForDamage)
+				{
+					user.overToxic = false;
+				}
+			}
 			
 			//Tick down Toxicity
 			user.modToxicity(-1);
 			
-			//--------------------
-			// CACTUS RUM CONTROL
-			//--------------------
-			if(thisTick % CactusRum_tickLength == 0 && user.CactusRumEnabled)
+			//Exercise Buffs
+			for(int ii = 0; ii < PotionList.length; ii++)
 			{
-				//Regen health
-				if(thisPlayer.getHealth() > 0)
+				ElixirModPotion thisPotion = PotionList[ii];
+				
+				//Are we supposed to run now?
+				if(thisTick % thisPotion.getTickLength() == 0)
 				{
-					user.CactusRumTicks -= 1;
-					//Can't go above max
-					if(thisPlayer.getHealth() < 20)
+					String buffName = thisPotion.getName();
+					
+					//Check if this buff is enabled for this player
+					if(user.HasBuff.get(buffName) != null && user.HasBuff.get(buffName))
 					{
-						thisPlayer.setHealth(thisPlayer.getHealth()+1);
+						//Run buff
+						thisPotion.tick(user);
+					
+						//Decrease ticks, check for buff remove
+						user.BuffTicks.put(buffName, user.BuffTicks.get(buffName)-1);
+						if(user.BuffTicks.get(buffName) <= 0)
+						{
+							thisPotion.takeBuff(user);
+							
+							//Notify
+							String printMsg =  thisPotion.getSoberMessage();
+							if(!printMsg.isEmpty())
+							{
+								player.sendMessage(ChatColor.GRAY + "**" + printMsg + "**");
+							}
+						}
 					}
 				}
-				
-				//End?
-				if(user.CactusRumTicks == 0)
-				{
-					user.getPlayer().sendMessage(ChatColor.GRAY + "**" + util.randomStringFromList(CactusRum_soberMessages) + "**");
-					user.CactusRumEnabled = false;
-				}
 			}
-			//--End Cactus Rum--
-			
-			
-			//-------------------------
-			// ELIXIR OF HASTE CONTROL
-			//-------------------------
-			if(thisTick % Haste_tickLength == 0 && user.HasteEnabled)
-			{
-				user.HasteTicks -= 1;
-				
-				//End?
-				if(user.HasteTicks == 0)
-				{
-					user.getPlayer().sendMessage(ChatColor.GRAY + "**" + util.randomStringFromList(Haste_soberMessages) + "**");
-					plugin.hasteEnabled.put(thisPlayer, false);
-					user.HasteEnabled = false;
-				}
-			}
-			//--End Haste--
 			
 			index++;
 		}

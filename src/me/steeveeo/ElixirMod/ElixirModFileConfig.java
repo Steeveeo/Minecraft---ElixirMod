@@ -3,6 +3,8 @@ package me.steeveeo.ElixirMod;
 import java.io.File;
 import java.util.List;
 
+import me.steeveeo.ElixirMod.Potions.ElixirModPotion;
+
 import org.bukkit.util.config.Configuration;
 
 //Credit for this goes to JayJay110 on the Bukkit Forums!
@@ -35,31 +37,28 @@ public class ElixirModFileConfig {
             loadkeys();
         }
     }
-    private void write(String root, Object x){
+    public void write(String root, Object x){
         Configuration config = load();
         config.setProperty(root, x);
         config.save();
     }
-    private Boolean readBoolean(String root){
+    public Boolean readBoolean(String root){
         Configuration config = load();
         return config.getBoolean(root, true);
     }
-    @SuppressWarnings("unused")
-	private Double readDouble(String root){
+	public Double readDouble(String root){
         Configuration config = load();
         return config.getDouble(root, 0);
     }
-    private int readInt(String root){
+	public int readInt(String root){
         Configuration config = load();
         return config.getInt(root, 0);
     }
-    @SuppressWarnings("unused")
-    private List<String> readStringList(String root){
+    public List<String> readStringList(String root){
         Configuration config = load();
         return config.getKeys(root);
     }
-    @SuppressWarnings("unused")
-    private String readString(String root){
+    public String readString(String root){
         Configuration config = load();
         return config.getString(root);
     }
@@ -76,45 +75,44 @@ public class ElixirModFileConfig {
         return null;
     }
     private void addDefaults(){
-        plugin.log.info("[ElixirMod] Generating Config File...");
+        plugin.log.info("[ElixirMod] Config File Not Found, Generating...");
         
-        write(plugin.enabledstartup, true);
+        //Global Toxicity Stuff
+        write("Minimum Toxicity For Damage",50);
+        write("Toxicity Per Damage",20);
+        write("Toxicity Tick Length",3);
         
-        //Cactus Rum
-        write("Cactus Rum.baseDamage",6);
-        write("Cactus Rum.toxicityPerDamage",6);
-        write("Cactus Rum.toxicityPerDrink",30);
-        write("Cactus Rum.ticksPerDrink",60);
-        write("Cactus Rum.tickLength",3);
-        
-        //Elixir of Haste
-        write("Elixir of Haste.baseDamage",0);
-        write("Elixir of Haste.Minimum Toxicity for Damage",50);
-        write("Elixir of Haste.toxicityPerDamage",15);
-        write("Elixir of Haste.toxicityPerDrink",20);
-        write("Elixir of Haste.ticksPerDrink",10);
-        write("Elixir of Haste.tickLength",6);
+        //Call each potion loaded to write configs.
+        ElixirModPotion[] PotionList = plugin.ElixirMod_PotionController.PotionList;
+        for(int index = 0; index < PotionList.length; index++)
+        {
+        	ElixirModPotion thisPotion = PotionList[index];
+        	if(thisPotion != null)
+        	{
+        		thisPotion.configDefaults(this);
+        	}
+        }
         
         loadkeys();
+        
+        plugin.log.info("[ElixirMod] Config File Generation Complete.");
     }
     private void loadkeys()
     {
-    	plugin.enabled = readBoolean(plugin.enabledstartup);
-        
-        //Cactus Rum
-		plugin.ElixirMod_PotionController.CactusRum_baseDamage = readInt("Cactus Rum.baseDamage");
-		plugin.ElixirMod_PotionController.CactusRum_toxicityPerDamage = readInt("Cactus Rum.toxicityPerDamage");
-		plugin.ElixirMod_PotionController.CactusRum_toxicityPerDrink = readInt("Cactus Rum.toxicityPerDrink");
-		plugin.ElixirMod_PotionController.CactusRum_ticksPerDrink = readInt("Cactus Rum.ticksPerDrink");
-		plugin.ElixirMod_PotionController.CactusRum_tickLength = readInt("Cactus Rum.tickLength");
+        //Global Toxicity Stuff
+		plugin.ElixirMod_PotionController.Toxicity_minToxicityForDamage = readInt("Minimum Toxicity For Damage");
+		plugin.ElixirMod_PotionController.Toxicity_toxicityPerDamage = readInt("Toxicity Per Damage");
+		plugin.ElixirMod_PotionController.Toxicity_tickLength = readInt("Toxicity Tick Length");
 		
-		//Elixir of Haste
-		plugin.ElixirMod_PotionController.Haste_baseDamage = readInt("Elixir of Haste.baseDamage");
-		plugin.ElixirMod_PotionController.Haste_toxicityMinForDamage = readInt("Elixir of Haste.Minimum Toxicity for Damage");
-		plugin.ElixirMod_PotionController.Haste_toxicityPerDamage = readInt("Elixir of Haste.toxicityPerDamage");
-		plugin.ElixirMod_PotionController.Haste_toxicityPerDrink = readInt("Elixir of Haste.toxicityPerDrink");
-		plugin.ElixirMod_PotionController.Haste_ticksPerDrink = readInt("Elixir of Haste.ticksPerDrink");
-		plugin.ElixirMod_PotionController.Haste_tickLength = readInt("Elixir of Haste.tickLength");
-		
+        //Call each potion loaded to read configs and load in data.
+        ElixirModPotion[] PotionList = plugin.ElixirMod_PotionController.PotionList;
+        for(int index = 0; index < PotionList.length; index++)
+        {
+        	ElixirModPotion thisPotion = PotionList[index];
+        	if(thisPotion != null)
+        	{
+        		thisPotion.configLoad(this);
+        	}
+        }
     }
 }
